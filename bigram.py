@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+from pytictoc import TicToc
 
 # hyperparameters
 batch_size = 32 # how many independent sequences will we process in parallel?
@@ -104,6 +105,8 @@ m = model.to(device)
 # create a PyTorch optimizer
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
+t = TicToc() #create instance of class
+t.tic()
 for iter in range(max_iters):
 
     # every once in a while evaluate the loss on train and val sets
@@ -123,3 +126,4 @@ for iter in range(max_iters):
 # generate from the model
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
 print(decode(m.generate(context, max_new_tokens=500)[0].tolist()))
+t.toc()
