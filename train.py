@@ -4,7 +4,11 @@ from pytictoc import TicToc
 import pickle
 from model import BigramLanguageModel
 import logging
+from pretrain_data_prepare.prepare import get_all_files_in_directory
 
+_FILE_PATH = "./pretrain_data_prepare/extract/openwebtext"
+_NUM_FILE = 3
+file_name = "input.txt"
 # logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 # hyperparameters
@@ -17,11 +21,10 @@ learning_rate = 3e-4
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 device = 'mps' if torch.mps.is_available() else 'cpu'
 eval_iters = 200
-file_name = 'input.txt'
+epochs = 2
 
 torch.manual_seed(1337)
 
-logging.info("Reading file")
 # wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
 with open(file_name, 'r', encoding='utf-8') as f:
     text = f.read()
@@ -36,12 +39,6 @@ stoi = { ch:i for i,ch in enumerate(chars) }
 itos = { i:ch for i,ch in enumerate(chars) }
 encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
 decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
-
-# Train and test splits
-data = torch.tensor(encode(text), dtype=torch.long)
-n = int(0.9*len(data)) # first 90% will be train, rest val
-train_data = data[:n]
-val_data = data[n:]
 
 # data loading
 def get_batch(split):
@@ -76,35 +73,54 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 # start training
 logging.info(f"training started, device = {device}")
 
-t = TicToc() #create instance of class
-t.tic()
-running_mfu = -1.0
-for iter in range(max_iters):
+file_list = get_all_files_in_directory(_FILE_PATH)
 
-    # every once in a while evaluate the loss on train and val sets
-    if iter % eval_interval == 0:
-        losses = estimate_loss()
-        logging.info(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+for i in range(epochs):
+    for file_name in file_list[:_NUM_FILE]:
 
-        checkpoint = {
-            'model': model.state_dict(),
-            'optimizer': optimizer.state_dict(),
-            'model_args': model,
-            'iter_num': iter,
-            'loss': losses['train'],
-            # 'config': config,
-        }
-        logging.info(f"saving checkpoint to {out_dir}")
-        torch.save(checkpoint, os.path.join(out_dir, 'ckpt.pt'))
+        logging.info("Reading file")
+        with open(file_name, 'r', encoding='utf-8') as f:
+            text = f.read()
 
-    # sample a batch of data
-    xb, yb = get_batch('train')
+        logging.info("Successfully read file")
+        # Train and test splits
+        data = torch.tensor(encode(text), dtype=torch.long)
+        n = int(0.9*len(data)) # first 90% will be train, rest val
+        train_data = data[:n]
+        val_data = data[n:]
 
-    # evaluate the loss
-    logits, loss = model(xb, yb)
-    optimizer.zero_grad(set_to_none=True)
-    loss.backward()
-    optimizer.step()
+        t = TicToc() #create instance of class
+        t.tic()
+        running_mfu = -1.0
+        for iter in range(max_iters):
+
+            # every once in a while evaluate the loss on train and val sets
+            if iter % eval_interval == 0:
+                losses = estimate_loss()
+                logging.info(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+
+                checkpoint = {
+                    'model': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'model_args': model,
+                    'iter_num': iter,
+                    'loss': losses['train'],
+                    # 'config': config,
+                }
+                logging.info(f"saving checkpoint to {out_dir}")
+                torch.save(checkpoint, os.path.join(out_dir, 'ckpt.pt'))
+
+            # sample a batch of data
+            xb, yb = get_batch('train')
+
+            # evaluate the loss
+            logits, loss = model(xb, yb)
+            optimizer.zero_grad(set_to_none=True)
+            loss.backward()
+            optimizer.step()
+
+    # generate from the model
+    logging.info(f"epoch {i} completed successfully, with loss {losses['val']:.4f}")
 
 # generate from the model
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
