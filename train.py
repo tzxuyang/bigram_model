@@ -99,17 +99,6 @@ for i in range(epochs):
                 losses = estimate_loss()
                 logging.info(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
 
-                checkpoint = {
-                    'model': model.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                    'model_args': model,
-                    'iter_num': iter,
-                    'loss': losses['train'],
-                    # 'config': config,
-                }
-                logging.info(f"saving checkpoint to {out_dir}")
-                torch.save(checkpoint, os.path.join(out_dir, 'ckpt.pt'))
-
             # sample a batch of data
             xb, yb = get_batch('train')
 
@@ -118,12 +107,22 @@ for i in range(epochs):
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             optimizer.step()
-
-    # generate from the model
+    
+    # record checkpoint end of each epoch
+    checkpoint = {
+        'model': model.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'model_args': model,
+        'iter_num': iter,
+        'loss': losses['train'],
+    }
+    logging.info(f"------------------saving checkpoint to {out_dir}------------------------")
+    torch.save(checkpoint, os.path.join(out_dir, 'ckpt.pt'))
     logging.info(f"epoch {i} completed successfully, with loss {losses['val']:.4f}")
 
 # generate from the model
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
-logging.info(decode(m.generate(context, max_new_tokens=500)[0].tolist()))
+logging.info("-------------------------sample text generation----------------------------")
+logging.info(decode(m.generate(context, max_new_tokens=1000)[0].tolist()))
 t.toc()
 logging.info("training completed successfully")
