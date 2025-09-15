@@ -1,0 +1,7 @@
+{
+    "block_size": 256, 
+    "n_embed": 384,
+    "n_head": 6,
+    "n_layer": 4,
+    "dropout": 0.2
+}
