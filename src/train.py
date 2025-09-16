@@ -1,3 +1,6 @@
+import sys
+sys.path.append('../')
+sys.path.append('./')
 import torch
 import os
 from pytictoc import TicToc
@@ -14,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 out_dir = '../out'
 file_name = '../input.txt'
 _CKPT_PATH = "./out/ckpt.pt"
-_FILE_PATH = "../pretrain_data_prepare/extract/openwebtext"
+_FILE_PATH = "./pretrain_data_prepare/extract/openwebtext"
 pwd = os.getcwd()
 
 def post_train(file_name, out_dir, load_model = False):
@@ -137,5 +140,5 @@ def pre_train(file_list, out_dir):
 if __name__=="__main__":
     # post_train(file_name, out_dir)
     file_list = get_all_files_in_directory(_FILE_PATH)
-    # print(file_list)
+    print(file_list)
     pre_train(file_list, out_dir)
