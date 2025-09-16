@@ -97,7 +97,7 @@ def pre_train(file_list, out_dir):
             print(file_name)
             train_data, val_data = load_data(file_name)
 
-            for iter in range(max_iters):
+            for iter in range(max_iters+1):
 
                 # every once in a while evaluate the loss on train and val sets
                 if iter % eval_interval == 0:

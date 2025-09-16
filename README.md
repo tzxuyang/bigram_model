@@ -13,7 +13,8 @@
 
 * run inference with trained checkpoint
     ```
-    python bigram_model.py --mode infer
+    python bigram_model.py --mode infer_pretrain //for pretrain model
+    python bigram_model.py --mode infer //for finetuned model
     ```
 
 ### Data preparation
