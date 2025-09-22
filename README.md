@@ -1,5 +1,12 @@
 ## LLM from scrath
 
+### Prepare Data
+* get to pretrain_data_prepare and extract data
+    ```
+    cd pretrain_data_prepare
+    python prepare.py
+    ```
+    
 ### Quick start
 * simple train with only Shakespeare txt
     ```

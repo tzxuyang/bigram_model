@@ -3,7 +3,7 @@ sys.path.append('../')
 sys.path.append('./')
 import torch
 import os
-from pytictoc import TicToc
+import time
 from src.model import BigramLanguageModel
 from src.model import decode
 import logging
@@ -41,8 +41,7 @@ def post_train(file_name, out_dir, load_model = False):
     # start training
     logging.info(f"training started, device = {device}")
     
-    t = TicToc() #create instance of class
-    t.tic()
+    start_time = time.time()
     for iter in range(max_iters):
 
         # every once in a while evaluate the loss on train and val sets
@@ -75,8 +74,9 @@ def post_train(file_name, out_dir, load_model = False):
     # generate from the model
     context = torch.zeros((1, 1), dtype=torch.long, device=device)
     logging.info(decode(m.generate(context, max_new_tokens=500)[0].tolist()))
-    duration = t.toc()
-    logging.info(f"training completed successfully")
+    end_time = time.time()
+    duration_min = (end_time - start_time)/60.0
+    logging.info(f"training completed successfully in {duration_min} min")
 
 # file_list = get_all_files_in_directory(_FILE_PATH)
 def pre_train(file_list, out_dir):
@@ -93,8 +93,7 @@ def pre_train(file_list, out_dir):
     # start training
     logging.info(f"training started, device = {device}")
 
-    t = TicToc() #create instance of class
-    t.tic()
+    start_time = time.time()
     for i in range(epochs):
         for file_name in file_list[:num_file]:
             print(file_name)
@@ -133,8 +132,9 @@ def pre_train(file_list, out_dir):
     context = torch.zeros((1, 1), dtype=torch.long, device=device)
     logging.info("-------------------------sample text generation----------------------------")
     logging.info(decode(m.generate(context, max_new_tokens=1000)[0].tolist()))
-    t.toc()
-    logging.info("training completed successfully")
+    end_time = time.time()
+    duration_min = (end_time - start_time)/60.0
+    logging.info(f"training completed successfully in {duration_min} min")
 
 
 if __name__=="__main__":
