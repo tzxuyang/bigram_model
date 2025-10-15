@@ -3,6 +3,7 @@ import os
 import torch.nn as nn
 from torch.nn import functional as F
 import json
+import math
 
 # hyperparameters
 pwd = os.getcwd()
@@ -46,6 +47,22 @@ n = int(0.9*len(data)) # first 90% will be train, rest val
 train_data = data[:n]
 val_data = data[n:]
 
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model, max_len=5000):
+        super(PositionalEncoding, self).__init__()
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0).transpose(0, 1) # Shape: (max_len, 1, d_model)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        # x shape: (seq_len, batch_size, d_model)
+        return x.to(device) + self.pe[:x.size(0), :]
+    
 class Head(nn.Module):
     """single head self-attention"""
 
@@ -125,7 +142,7 @@ class BigramLanguageModel(nn.Module):
         super().__init__()
         # each token directly reads off the logits for the next token from a lookup table
         self.token_embedding_table = nn.Embedding(vocab_size, n_embed)
-        self.position_embedding_table = nn.Embedding(block_size, n_embed)
+        self.position_embedding_table = PositionalEncoding(n_embed, max_len = block_size)
         # self.sa_head = Head(n_embed)
         # self.sa_head = MultiHeadAttention(4, n_embed//4) # i.e. 4 hedas of 8 dimensional self-attention
         # self.ffwd = Feedforward(n_embed)
@@ -137,7 +154,7 @@ class BigramLanguageModel(nn.Module):
         B, T = idx.shape
         # idx and targets are both (B,T) tensor of integers
         tok_emb = self.token_embedding_table(idx) # (B,T, n_embed)
-        pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T, n_embed)
+        pos_emb = self.position_embedding_table(torch.randn(B, T, n_embed)) # (T, n_embed)
         x = tok_emb + pos_emb # (B,T,n_embed)
         # x = self.sa_head(x) #  (B, T, n_embed)
         # x = self.ffwd(x) # (B, T, C)
